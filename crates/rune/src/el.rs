@@ -34,6 +34,7 @@ mod handler_set;
 mod handlers;
 mod layout;
 pub(crate) mod layout_watch;
+mod live_colors;
 pub mod motion;
 mod pills;
 mod pixel_snap;
