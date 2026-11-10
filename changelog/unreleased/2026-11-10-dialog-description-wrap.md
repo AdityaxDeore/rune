@@ -1,0 +1,1 @@
+- **Dialog descriptions wrap inside the card.** A long description ran past the panel as a single line; it now wraps within the panel padding, and a fitted dialog grows by a line.

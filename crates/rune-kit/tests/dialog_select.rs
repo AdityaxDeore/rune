@@ -40,6 +40,60 @@ fn select_portal_inside_dialog_accepts_an_option_outside_the_panel() {
 }
 
 #[test]
+fn dialog_description_wraps_within_card_and_expands_fit_height() {
+    fn view(_: &bool, _: &mut Cx<bool>) -> El {
+        let k = Kit::neutral(true);
+        let mut layer = Vec::new();
+        Dialog::new("d", "Delete table")
+            .open(true)
+            .fit()
+            .description(
+                "This permanently removes the table, its indexes and every row it holds. This cannot be undone.",
+            )
+            .on_close(|_: &mut bool| {})
+            .build(&k, &mut layer);
+        root(rune::el().w_full().h_full(), layer)
+    }
+    let mut rt = Runtime::new(true, view, (600.0, 300.0), Env::new(true, 1.0));
+    for _ in 0..60 { rt.frame(1.0 / 60.0); }
+    let elements = rt.elements();
+    let panel = elements.iter().find(|e| e.key.as_deref() == Some("d-dialog")).unwrap();
+    let desc = elements.iter().find(|e| e.text.as_deref().is_some_and(|t| t.starts_with("This permanently"))).unwrap();
+    let panel_right = panel.rect[0] + panel.rect[2];
+    let desc_right = desc.rect[0] + desc.rect[2];
+    assert!(desc_right <= panel_right, "description right edge ({desc_right}) exceeded panel right edge ({panel_right})");
+    assert_eq!(desc.rect[0], 76.0, "description starts at the panel's left padding");
+    assert_eq!(desc.rect[3], 40.0, "description wraps to two lines inside the panel");
+    assert_eq!(panel.rect[3], 96.0, "fitted panel height grows from 76.0 to 96.0 for a two-line description (one extra 20 pt line, no body row)");
+}
+
+#[test]
+fn non_fit_dialog_wraps_long_description_inside_panel() {
+    fn view(_: &bool, _: &mut Cx<bool>) -> El {
+        let k = Kit::neutral(true);
+        let mut layer = Vec::new();
+        Dialog::new("d", "Delete table")
+            .open(true)
+            .description(
+                "This permanently removes the table, its indexes and every row it holds. This cannot be undone.",
+            )
+            .on_close(|_: &mut bool| {})
+            .build(&k, &mut layer);
+        root(rune::el().w_full().h_full(), layer)
+    }
+    let mut rt = Runtime::new(true, view, (600.0, 300.0), Env::new(true, 1.0));
+    for _ in 0..60 { rt.frame(1.0 / 60.0); }
+    let elements = rt.elements();
+    let panel = elements.iter().find(|e| e.key.as_deref() == Some("d-dialog")).unwrap();
+    let desc = elements.iter().find(|e| e.text.as_deref().is_some_and(|t| t.starts_with("This permanently"))).unwrap();
+    let panel_right = panel.rect[0] + panel.rect[2];
+    let desc_right = desc.rect[0] + desc.rect[2];
+    assert!(desc_right <= panel_right, "description right edge ({desc_right}) exceeded panel right edge ({panel_right})");
+    assert_eq!(desc.rect[3], 40.0, "description wraps to two lines");
+    assert_eq!(panel.rect[3], 368.0, "the standard height is unchanged");
+}
+
+#[test]
 fn a_fit_dialog_is_as_tall_as_its_content() {
     fn view(fit: &bool, _: &mut Cx<bool>) -> El {
         let k = Kit::neutral(true);
