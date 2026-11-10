@@ -275,7 +275,27 @@ impl<S: 'static> Measurement<'_, S> {
             }
             v.indexed = source.is_some();
             let version = el.virtual_rows_version.filter(|_| source.is_some());
-            let same = match &source {
+            // An unchanged version promises the rows it covered keep their keys, so a longer
+            // list is the same rows plus new ones at the end: read only the new keys. The first
+            // and last old keys are checked as a guard against a stale version.
+            let appended = match &source {
+                Some(rows)
+                    if version.is_some()
+                        && version == v.keys_version
+                        && !self.retry
+                        && rows.count > v.keys.len()
+                        && !v.keys.is_empty()
+                        && (rows.key)(state, 0) == v.keys[0]
+                        && (rows.key)(state, v.keys.len() - 1) == v.keys[v.keys.len() - 1] =>
+                {
+                    let new = (v.keys.len()..rows.count)
+                        .map(|i| (rows.key)(state, i).into_owned())
+                        .collect();
+                    v.append_keys(new, self.commits)
+                }
+                _ => false,
+            };
+            let same = appended || match &source {
                 Some(rows) => rows.count == v.keys.len()
                     && (self.state_unchanged || (version.is_some() && version == v.keys_version) || (0..rows.count).all(|i| (rows.key)(state, i) == v.keys[i])),
                 None => v.same_keys(el.children.iter().map(|c| c.key.as_deref())),

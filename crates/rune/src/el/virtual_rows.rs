@@ -40,6 +40,8 @@ impl El {
     /// built by `build(s, i)`. Layout calls `build` only for the rows in the mounted window (the
     /// viewport and up to two viewports either side), after it knows where that window is, so a
     /// commit costs one `key` call per row plus the rows it mounts, however long the list is.
+    /// Appending rows with an unchanged version reads only the new keys, so a list that grows
+    /// while on screen costs O(new) a frame, not O(rows).
     /// Rows new to the window beyond the viewport mount half a viewport per side per frame, so a
     /// jump or a prepended page doesn't lay out three viewports of text at once.
     /// Both closures get the window's state, so they capture nothing borrowed.
