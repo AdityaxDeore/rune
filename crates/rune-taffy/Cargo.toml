@@ -8,6 +8,9 @@ license.workspace = true
 default = []
 # Use upstream `taffy::TaffyTree` instead of `LayoutStore` for A/B benchmarks and parity checks.
 baseline-taffy = []
+# Pass taffy's balanced-wrap variants through; without it, another crate enabling
+# `flexbox_balance` still compiles via the fallback in `encode_wrap`.
+flexbox_balance = ["taffy/flexbox_balance"]
 
 [dependencies]
 taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "content_size"] }

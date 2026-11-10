@@ -1,0 +1,1 @@
+- **`rune-taffy` compiles when another crate enables taffy's `flexbox_balance`.** The compact wrap encoding only matched the three plain variants, so feature unification added `Balance`/`BalanceReverse` broke the build; balanced wraps now lay out as plain wraps.

@@ -373,6 +373,10 @@ const fn encode_wrap(w: FlexWrap) -> u8 {
         FlexWrap::NoWrap => 0,
         FlexWrap::Wrap => 1,
         FlexWrap::WrapReverse => 2,
+        // Another crate in the graph may enable taffy's `flexbox_balance`, whose
+        // balanced wraps Rune never builds; they lay out as plain wraps.
+        #[allow(unreachable_patterns)]
+        _ => 1,
     }
 }
 

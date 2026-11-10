@@ -212,6 +212,33 @@ fn compact_style_setters_match_taffy_style() {
     }
 }
 
+/// Balanced wraps only exist when taffy's `flexbox_balance` is enabled; Rune never
+/// builds one, so the compact style falls back to a plain wrap instead of failing
+/// to compile (another crate in the graph may enable the feature).
+#[test]
+#[cfg(feature = "flexbox_balance")]
+fn balanced_flex_wrap_falls_back_to_plain_wrap() {
+    for wrap in [FlexWrap::Balance, FlexWrap::BalanceReverse] {
+        let mut cs = CompactStyle::rune_base(FlexDirection::Row);
+        cs.set_flex_wrap(wrap);
+        assert_eq!(
+            cs.flex_wrap(),
+            FlexWrap::Wrap,
+            "{wrap:?} must lay out as a plain wrap"
+        );
+        assert_eq!(
+            cs.to_style().flex_wrap,
+            FlexWrap::Wrap,
+            "{wrap:?} must round-trip as a plain wrap"
+        );
+        assert_eq!(
+            CompactStyle::from_style(Style { flex_wrap: wrap, ..Style::DEFAULT }),
+            CompactStyle::from_style(Style { flex_wrap: FlexWrap::Wrap, ..Style::DEFAULT }),
+            "{wrap:?} must encode identically to a plain wrap"
+        );
+    }
+}
+
 #[test]
 fn a_taken_box_placement_keeps_the_overflow_on_the_wrapper() {
     for cold in [false, true] {
