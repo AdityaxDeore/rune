@@ -209,6 +209,52 @@ impl VirtualList {
         keys.len() == self.keys.len() && keys.zip(&self.keys).all(|(a, b)| a == Some(b.as_str()))
     }
 
+    /// Appends rows at the end, keeping the rows already there with their measured heights,
+    /// births and prefix sums. Returns false when a new key already exists (in the list or
+    /// twice in `new`); the caller then takes the full path, which renames duplicates.
+    /// The caller must have checked the old rows kept their keys: an append is only the
+    /// same rows plus new ones at the end.
+    pub fn append_keys(&mut self, new: Vec<String>, commit: u64) -> bool {
+        {
+            let mut seen = HashSet::default();
+            if new
+                .iter()
+                .any(|k| !seen.insert(k) || self.rows.contains_key(k))
+            {
+                return false;
+            }
+        }
+        let sums_fresh =
+            !self.sums_stale.get() && self.sums.borrow().len() == self.row_heights.len() + 1;
+        self.rows.reserve(new.len());
+        for key in new {
+            let index = self.keys.len();
+            self.rows.insert(
+                key.clone(),
+                Row {
+                    index,
+                    height: None,
+                },
+            );
+            self.born.push(commit);
+            self.row_heights.push(self.estimate);
+            if sums_fresh {
+                let mut sums = self.sums.borrow_mut();
+                let y = sums.last().copied().unwrap_or(0.0) + self.estimate + self.gap;
+                sums.push(y);
+            }
+            self.keys.push(key);
+        }
+        if !sums_fresh {
+            self.sums_stale.set(true);
+        }
+        // The rows already there stay, so whatever the reader sees holds its place.
+        self.keys_fresh = true;
+        self.held = true;
+        self.reported_visible = None;
+        true
+    }
+
     /// Replaces the rows. Keys that stay keep their measured height and birth; new ones are born
     /// at `commit`. Returns the first row visible at `offset` (when given) that stays, with its
     /// top before the change, to anchor the reader to: none when no row in view stays.

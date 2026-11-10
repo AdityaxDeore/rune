@@ -1,0 +1,1 @@
+- **`virtual_rows` appends cost O(new), not O(rows).** Growing a list re-read every row's key and rebuilt the row map; with an unchanged version, an append now reads only the new keys and extends the rows, heights and prefix sums in place.
